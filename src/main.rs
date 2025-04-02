@@ -1,9 +1,9 @@
-mod Search_trie;
+mod search_trie;
 
-use Search_trie::SearchTrie;
+use search_trie::SearchTrie;
 
 fn main() {
-    let mut root = SearchTrie::new();
+    let mut trie = SearchTrie::new();
 
     let lines = [
         "line 1",
@@ -12,6 +12,7 @@ fn main() {
     ];
 
     for line in lines {
-        root.insert(line);
+        trie.insert(line);
     }
+    
 }
