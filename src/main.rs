@@ -1,6 +1,6 @@
 mod search_trie;
 
-use std::io::stdin;
+use std::io::{stdin, stdout, Write};
 
 use search_trie::SearchTrie;
 
@@ -29,9 +29,10 @@ fn main() {
 
     loop {
         print!("\nEnter next char: ");
+        stdout().flush().unwrap();
         stdin().read_line(&mut input).unwrap();
-        engine.query(input.trim().chars().last().unwrap());
+        engine.tp_query(input.trim().chars().last().unwrap());
 
-        println!("history:\n {:?}", engine.options());
+        println!("history:\n {:?}", engine.tp_options());
     }
 }

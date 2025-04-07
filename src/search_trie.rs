@@ -1,4 +1,7 @@
-use std::{collections::HashMap, time::Instant};
+use std::{collections::HashMap, sync::mpsc::channel, thread::scope, time::Instant};
+
+use threadpool::ThreadPool;
+use threadpool_scope::scope_with;
 
 #[derive(Debug)]
 pub struct TrieNode {
@@ -153,12 +156,14 @@ impl<'a> Clone for HistoryNode<'a> {
 pub struct Engine<'a> {
   // store the different current Trie_nodes reached and PathNodes to build the line with history for backspace
   history: Vec<Vec<HistoryNode<'a>>>,
+  threads: ThreadPool
 }
 
 impl<'a> Engine<'a> {
   pub fn new(root: &'a TrieNode) -> Self {
     Self { 
       history:  vec![vec![HistoryNode { node: root, path: Vec::new() }]],
+      threads: ThreadPool::new(4)
     }
   }
 
@@ -176,6 +181,64 @@ impl<'a> Engine<'a> {
     for HistoryNode {node, mut path } in curr {
       next.append(&mut traverse(node, input, &mut path));
     }
+    
+    self.history.push(next);
+  }
+
+  pub fn t_query(&mut self, input: char) {
+    if input.eq(&'*') {
+      if self.history.len() > 1 {
+        self.history.pop();
+      }
+      return;
+    }
+
+    let curr = self.history.last().unwrap().to_vec();
+    let mut next = Vec::new();
+    let (tx, tr) = channel();
+
+    scope(|s| {
+      let mut threads = Vec::new();
+      for HistoryNode {node, mut path } in curr {
+        let tx_c = tx.clone();
+        threads.push( s.spawn(move || {
+          tx_c.send(traverse(node, input, &mut path)).unwrap();
+        }));
+      }
+
+      for _ in threads {
+        next.append(&mut tr.recv().unwrap());
+      }
+    });
+    
+    self.history.push(next);
+  }
+
+  pub fn tp_query(&mut self, input: char) {
+    if input.eq(&'*') {
+      if self.history.len() > 1 {
+        self.history.pop();
+      }
+      return;
+    }
+
+    let curr = self.history.last().unwrap().to_vec();
+    let mut next = Vec::new();
+    let (tx, tr) = channel();
+
+    scope_with(&self.threads, |s| {
+      let mut threads = Vec::new();
+      for HistoryNode {node, mut path } in curr {
+        let tx_c = tx.clone();
+        threads.push( s.execute(move || {
+          tx_c.send(traverse(node, input, &mut path)).unwrap();
+        }));
+      }
+
+      for _ in threads {
+        next.append(&mut tr.recv().unwrap());
+      }
+    });
     
     self.history.push(next);
   }
@@ -198,4 +261,85 @@ impl<'a> Engine<'a> {
 
     options_list
   }
+
+  pub fn t_options(&self) -> Vec<String> {
+    let mut options_list = Vec::new();
+
+    if let Some(nodes) = self.history.last() {
+      scope(|s| {
+        let mut threads = Vec::new();
+        let (tx, tr) = channel();
+
+        for HistoryNode { node, path } in nodes {
+          let tx_c = tx.clone();
+          threads.push(
+            s.spawn(move || {
+              let path1 = build_path(path);
+              let mut local_opts = Vec::new();
+  
+              let path2_list = expand(node);
+              if path2_list.len() == 0 {
+                local_opts.push(path1);
+              } else {
+                path2_list.iter().for_each(|path2| {
+                  local_opts.push(format!("{}{}", path1, path2));
+                });
+              }
+  
+              tx_c.send(local_opts).unwrap();
+            })
+          );
+
+        }
+
+        for _ in threads {
+          options_list.append(&mut tr.recv().unwrap());
+        }
+      });
+
+    }
+
+    options_list
+  }
+
+  pub fn tp_options(&self) -> Vec<String> {
+    let mut options_list = Vec::new();
+
+    if let Some(nodes) = self.history.last() {
+      scope_with(&self.threads ,|s| {
+        let mut threads = Vec::new();
+        let (tx, tr) = channel();
+
+        for HistoryNode { node, path } in nodes {
+          let tx_c = tx.clone();
+          threads.push(
+            s.execute(move || {
+              let path1 = build_path(path);
+              let mut local_opts = Vec::new();
+  
+              let path2_list = expand(node);
+              if path2_list.len() == 0 {
+                local_opts.push(path1);
+              } else {
+                path2_list.iter().for_each(|path2| {
+                  local_opts.push(format!("{}{}", path1, path2));
+                });
+              }
+  
+              tx_c.send(local_opts).unwrap();
+            })
+          );
+
+        }
+
+        for _ in threads {
+          options_list.append(&mut tr.recv().unwrap());
+        }
+      });
+
+    }
+
+    options_list
+  }
+  
 }
