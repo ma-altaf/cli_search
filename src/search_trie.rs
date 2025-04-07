@@ -76,8 +76,8 @@ impl SearchTrie {
     }
   }
 
-  pub fn engine(&self) -> Engine {
-    Engine::new(&self.root)
+  pub fn engine(&self, thread_count: usize) -> Engine {
+    Engine::new(&self.root, thread_count)
   }
 }
 
@@ -141,7 +141,6 @@ fn expand(node: &TrieNode) -> Vec<String> {
 }
 
 #[derive(Debug)]
-
 struct HistoryNode<'a> {
   node: &'a TrieNode,
   path: Vec<PathNode>
@@ -160,10 +159,10 @@ pub struct Engine<'a> {
 }
 
 impl<'a> Engine<'a> {
-  pub fn new(root: &'a TrieNode) -> Self {
+  pub fn new(root: &'a TrieNode, thread_count: usize) -> Self {
     Self { 
       history:  vec![vec![HistoryNode { node: root, path: Vec::new() }]],
-      threads: ThreadPool::new(4)
+      threads: ThreadPool::new(thread_count)
     }
   }
 
