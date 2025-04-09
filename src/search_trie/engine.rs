@@ -17,24 +17,31 @@ impl Clone for PathNode {
     }
 }
 
-fn traverse<'a>(node: &'a TrieNode, target: char, path: &mut Vec<PathNode>) -> Vec<HistoryNode<'a>> {
-  let mut options: Vec<HistoryNode> = Vec::new();
+pub(super) fn traverse<'a>(node: &'a TrieNode, target: char, source: Option<&PathNode>) -> Vec<HistoryNode<'a>> {
+  let mut paths: Vec<HistoryNode<'a>> = Vec::new();
 
   for next in &node.val {
     if next.0 == &target {
-      path.push(PathNode { val: *next.0, in_query: true });
-      options.push(HistoryNode { node: node.val.get(&target).unwrap(), path: path.to_vec() });
+      paths.push(HistoryNode { 
+        node: node.val.get(&target).unwrap(),
+        path: if let Some(s) = source { vec![s.clone(), PathNode { val: *next.0, in_query: true }] } 
+          else { vec![PathNode { val: *next.0, in_query: true }] }
+      });
     } else {
-      path.push(PathNode { val: *next.0, in_query: false });
-      options.append(&mut traverse(next.1, target, path));
+      let res = traverse(next.1, target, Some(&PathNode { val: *next.0, in_query: false }));
+      
+      for mut r in res {
+        let mut p = if let Some(s) = source {vec![s.clone()]} else { Vec::new() };
+        p.append(&mut r.path);
+        paths.push(HistoryNode { node: r.node, path: p });
+      }
     }
-    path.pop();
   }
 
-  return options
+  return paths
 }
 
-fn build_path(path: &Vec<PathNode>) -> String {
+pub(super) fn build_path(path: &Vec<PathNode>) -> String {
   path.iter().fold(String::new(), |mut acc, PathNode { val, in_query }| {
     let next_char = match in_query {
       true => &format!("-{}-", val),
@@ -45,7 +52,7 @@ fn build_path(path: &Vec<PathNode>) -> String {
   })
 }
 
-fn expand(node: &TrieNode) -> Vec<String> {
+pub(super) fn expand(node: &TrieNode) -> Vec<String> {
   let mut res = Vec::new();
 
   for (c, node) in &node.val {
@@ -101,8 +108,12 @@ impl<'a> SearchEngine for Engine<'a> {
     let curr = self.history.last().unwrap().to_vec();
     let mut next: Vec<HistoryNode> = Vec::new();
 
-    for HistoryNode {node, mut path } in curr {
-      next.append(&mut traverse(node, input, &mut path));
+    for HistoryNode {node, path } in curr {
+      next.append(&mut traverse(node, input, None).iter_mut().map(|hp| {
+        let mut t_path = path.to_vec();
+        t_path.append(&mut hp.path);
+        HistoryNode {node: hp.node, path: t_path }
+      }).collect());
     }
     
     self.history.push(next);

@@ -3,57 +3,7 @@ use std::sync::mpsc::channel;
 use threadpool::ThreadPool;
 use threadpool_scope::scope_with;
 
-use super::{engine::{HistoryNode, PathNode}, SearchEngine, TrieNode};
-
-// TODO: use threadpool
-fn traverse<'a>(node: &'a TrieNode, target: char, path: &mut Vec<PathNode>) -> Vec<HistoryNode<'a>> {
-  let mut options: Vec<HistoryNode> = Vec::new();
-
-  for next in &node.val {
-    if next.0 == &target {
-      path.push(PathNode { val: *next.0, in_query: true });
-      options.push(HistoryNode { node: node.val.get(&target).unwrap(), path: path.to_vec() });
-    } else {
-      path.push(PathNode { val: *next.0, in_query: false });
-      options.append(&mut traverse(next.1, target, path));
-    }
-    path.pop();
-  }
-
-  return options
-}
-
-// TODO: use threadpool
-fn build_path(path: &Vec<PathNode>) -> String {
-  path.iter().fold(String::new(), |mut acc, PathNode { val, in_query }| {
-    let next_char = match in_query {
-      true => &format!("-{}-", val),
-      false => &format!("{}", val),
-    };
-    acc.push_str(next_char);
-    acc
-  })
-}
-
-// TODO: use threadpool
-fn expand(node: &TrieNode) -> Vec<String> {
-  let mut res = Vec::new();
-
-  for (c, node) in &node.val {
-    let path = c.to_string();
-    let expansion = expand(node);
-    
-    if expansion.len() > 0 {
-      expansion.iter().for_each(|v| {
-        res.push(format!("{}{}", path, v));
-      });
-    } else {
-      res.push(path);
-    }
-  }
-
-  res
-}
+use super::{engine::{HistoryNode, build_path, expand, traverse}, SearchEngine, TrieNode};
 
 pub struct TPEngine<'a> {
   // store the different current Trie_nodes reached and PathNodes to build the line with history for backspace
@@ -86,10 +36,16 @@ impl<'a> SearchEngine for TPEngine<'a> {
 
     scope_with(&self.threads, |s| {
       let mut threads = Vec::new();
-      for HistoryNode {node, mut path } in curr {
+      for HistoryNode {node, path } in curr {
         let tx_c = tx.clone();
         threads.push( s.execute(move || {
-          tx_c.send(traverse(node, input, &mut path)).unwrap();
+          tx_c.send(
+          traverse(node, input, None).iter_mut().map(|hp| {
+            let mut t_path = path.to_vec();
+            t_path.append(&mut hp.path);
+            HistoryNode {node: hp.node, path: t_path }
+          }).collect()
+        ).unwrap();
         }));
       }
 

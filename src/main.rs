@@ -10,18 +10,21 @@ fn main() {
     let mut trie = SearchTrie::new();
 
     let lines = LINES;
+    // let lines = ["line 1", "line 2", "not a line"];
 
     for line in lines {
         trie.insert(&line);
     }
 
-    println!("{:?}", trie.list());
+    // println!("{:?}", trie.list());
 
-    let queries = vec!['A', 'B', 'B'];
+    let query = "ABB";
 
-    engine_performance(&trie, &queries);
-    t_engine_performance(&trie, &queries);
-    tp_engine_performance(&trie, &queries, 4);
+    // interactive_engine(trie.tp_engine(1024));
+
+    engine_performance(&trie, &query);
+    t_engine_performance(&trie, &query);
+    tp_engine_performance(&trie, &query, 4);
 }
 
 fn interactive_engine<T>(engine: T) 
@@ -49,16 +52,16 @@ where T: SearchEngine  {
     }
 }
 
-fn engine_performance(trie: &SearchTrie, queries: &Vec<char>) {
-    let query_len: u128 = queries.len().try_into().unwrap();
+fn engine_performance(trie: &SearchTrie, query: &str) {
+    let query_len: u128 = query.len().try_into().unwrap();
     let mut engine = trie.engine();
 
     let mut avg_query_time = 0;
     let mut avg_opt_time = 0;
 
-    for c in queries {
+    for c in query.chars() {
         let now1: Instant = Instant::now();
-        engine.query(*c);
+        engine.query(c);
         let query_time = now1.elapsed().as_millis();
     
         let now2: Instant = Instant::now();
@@ -75,16 +78,16 @@ fn engine_performance(trie: &SearchTrie, queries: &Vec<char>) {
     stdout().flush().unwrap();
 }
 
-fn t_engine_performance(trie: &SearchTrie, queries: &Vec<char>) {
-    let query_len: u128 = queries.len().try_into().unwrap();
+fn t_engine_performance(trie: &SearchTrie, query: &str) {
+    let query_len: u128 = query.len().try_into().unwrap();
     let mut engine = trie.t_engine();
 
     let mut avg_query_time = 0;
     let mut avg_opt_time = 0;
 
-    for c in queries {
+    for c in query.chars() {
         let now1: Instant = Instant::now();
-        engine.query(*c);
+        engine.query(c);
         let query_time = now1.elapsed().as_millis();
     
         let now2: Instant = Instant::now();
@@ -101,16 +104,16 @@ fn t_engine_performance(trie: &SearchTrie, queries: &Vec<char>) {
     stdout().flush().unwrap();
 }
 
-fn tp_engine_performance(trie: &SearchTrie, queries: &Vec<char>, thread_count: usize) {
-    let query_len: u128 = queries.len().try_into().unwrap();
+fn tp_engine_performance(trie: &SearchTrie, query: &str, thread_count: usize) {
+    let query_len: u128 = query.len().try_into().unwrap();
     let mut engine = trie.tp_engine(thread_count);
 
     let mut avg_query_time = 0;
     let mut avg_opt_time = 0;
 
-    for c in queries {
+    for c in query.chars() {
         let now1: Instant = Instant::now();
-        engine.query(*c);
+        engine.query(c);
         let query_time = now1.elapsed().as_millis();
     
         let now2: Instant = Instant::now();
