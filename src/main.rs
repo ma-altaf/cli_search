@@ -124,7 +124,7 @@ fn tp_engine_performance(trie: &SearchTrie, query: &str, thread_count: usize) {
         avg_opt_time += opt_time;
     }
 
-    println!("\nTPEngine performance:");
+    println!("\nTPEngine ({} threads) performance:", thread_count);
     println!("Average query time: {:?} ms", avg_query_time / query_len);
     println!("Average options time: {:?} ms", avg_opt_time / query_len);
     stdout().flush().unwrap();
