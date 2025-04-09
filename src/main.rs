@@ -73,8 +73,8 @@ fn engine_performance(trie: &SearchTrie, query: &str) {
     }
 
     println!("\nEngine performance:");
-    println!("query time: {:?}", avg_query_time / query_len);
-    println!("options time: {:?}", avg_opt_time / query_len);
+    println!("Average query time: {:?} ms", avg_query_time / query_len);
+    println!("Average options time: {:?} ms", avg_opt_time / query_len);
     stdout().flush().unwrap();
 }
 
@@ -99,8 +99,8 @@ fn t_engine_performance(trie: &SearchTrie, query: &str) {
     }
 
     println!("\nTEngine performance:");
-    println!("query time: {:?}", avg_query_time / query_len);
-    println!("options time: {:?}", avg_opt_time / query_len);
+    println!("Average query time: {:?} ms", avg_query_time / query_len);
+    println!("Average options time: {:?} ms", avg_opt_time / query_len);
     stdout().flush().unwrap();
 }
 
@@ -125,7 +125,7 @@ fn tp_engine_performance(trie: &SearchTrie, query: &str, thread_count: usize) {
     }
 
     println!("\nTPEngine performance:");
-    println!("query time: {:?}", avg_query_time / query_len);
-    println!("options time: {:?}", avg_opt_time / query_len);
+    println!("Average query time: {:?} ms", avg_query_time / query_len);
+    println!("Average options time: {:?} ms", avg_opt_time / query_len);
     stdout().flush().unwrap();
 }
