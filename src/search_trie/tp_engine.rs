@@ -73,13 +73,14 @@ impl<'a> SearchEngine for TPEngine<'a> {
               let mut local_opts = Vec::new();
   
               let path2_list = expand(node);
-              if path2_list.len() == 0 {
-                local_opts.push(path1);
-              } else {
-                path2_list.iter().for_each(|path2| {
-                  local_opts.push(format!("{}{}", path1, path2));
-                });
+              
+              if node.end {
+                local_opts.push(path1.clone());
               }
+
+              path2_list.iter().for_each(|path2| {
+                local_opts.push(format!("{}{}", path1, path2));
+              });
   
               tx_c.send(local_opts).unwrap();
             })

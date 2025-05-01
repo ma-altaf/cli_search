@@ -12,14 +12,16 @@ pub use engine::SearchEngine;
 #[derive(Debug)]
 pub struct TrieNode {
   ref_count: u32,
-  pub val: HashMap<char, Self>
+  pub val: HashMap<char, Self>,
+  pub end: bool
 }
 
 impl TrieNode {
   pub fn new() -> Self {
     Self {
       ref_count: 0,
-      val: HashMap::new()
+      val: HashMap::new(),
+      end: false
     }
   }
 }
@@ -66,6 +68,7 @@ impl SearchTrie {
       pointer = pointer.val.get_mut(&c).unwrap();
       pointer.ref_count += 1;
     }
+    pointer.end = true;
   }
 
   pub fn remove(&mut self, line: &str) {

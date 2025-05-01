@@ -59,12 +59,14 @@ pub(super) fn expand(node: &TrieNode) -> Vec<String> {
     let path = c.to_string();
     let expansion = expand(node);
     
+    if node.end {
+      res.push(path.clone());
+    }
+    
     if expansion.len() > 0 {
       expansion.iter().for_each(|v| {
         res.push(format!("{}{}", path, v));
       });
-    } else {
-      res.push(path);
     }
   }
 
@@ -125,13 +127,14 @@ impl<'a> SearchEngine for Engine<'a> {
       for HistoryNode { node, path } in nodes {
         let path1 = build_path(path);
         let path2_list = expand(node);
-        if path2_list.len() == 0 {
-          options_list.push(path1);
-        } else {
-          path2_list.iter().for_each(|path2| {
-            options_list.push(format!("{}{}", path1, path2));
-          });
+        
+        if node.end {
+          options_list.push(path1.clone());
         }
+
+        path2_list.iter().for_each(|path2| {
+          options_list.push(format!("{}{}", path1, path2));
+        });
       }
     }
 

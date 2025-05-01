@@ -10,7 +10,7 @@ fn main() {
     let mut trie = SearchTrie::new();
 
     let lines = LINES;
-    // let lines = ["line 1", "line 2", "not a line"];
+    // let lines = ["line 1", "line 10", "line 2", "not a line"];
 
     for line in lines {
         trie.insert(&line);
@@ -33,7 +33,7 @@ where T: SearchEngine  {
     let mut input = String::new();
 
     loop {
-        print!("\nEnter next char: ");
+        print!("\nEnter next char ('*' to erase one character): ");
         stdout().flush().unwrap(); // ensures print is displayed before stdin
         stdin().read_line(&mut input).unwrap();
         
